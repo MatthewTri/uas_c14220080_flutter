@@ -73,3 +73,9 @@ A simple Flutter application for managing and storing personal cooking recipes.
 - Flutter Bloc (State Management)
 - SharedPreferences (Session Persistence)
 - Go Router (Navigation)
+
+
+## Dummy Data
+
+1. Username (email) : test@gmail.com
+2. Password : password
