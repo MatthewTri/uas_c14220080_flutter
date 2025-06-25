@@ -1,3 +1,4 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/preferences_service.dart';
 import '../../../core/services/supabase_service.dart';
 import '../domain/user.dart';
@@ -12,7 +13,7 @@ class AuthRepository {
     try {
       // Basic email format validation
       if (!SupabaseService.isValidEmail(email)) {
-        throw AuthException('Please enter a valid email format');
+        throw AuthException('Format email tidak valid. Silakan masukkan email yang benar.');
       }
 
       final response = await SupabaseService.auth.signUp(
@@ -21,7 +22,7 @@ class AuthRepository {
       );
 
       if (response.user == null) {
-        throw AuthException('Failed to create account');
+        throw AuthException('Pendaftaran gagal. Silakan coba lagi.');
       }
 
       // Since we're not requiring email verification, automatically sign them in
@@ -31,7 +32,7 @@ class AuthRepository {
       );
 
       if (signInResponse.user == null) {
-        throw AuthException('Account created but failed to sign in');
+        throw AuthException('Akun berhasil dibuat tetapi gagal login. Silakan login manual.');
       }
 
       // Handle Remember Me functionality
@@ -47,15 +48,30 @@ class AuthRepository {
         id: signInResponse.user!.id,
         email: signInResponse.user!.email ?? email,
       );
+    } on AuthApiException catch (e) {
+      // Handle specific Supabase auth errors
+      String errorMessage;
+      final message = e.message.toLowerCase();
+      
+      if (message.contains('user already registered') || message.contains('email already exists')) {
+        errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau login.';
+      } else if (message.contains('password should be at least')) {
+        errorMessage = 'Password harus minimal 6 karakter.';
+      } else if (message.contains('invalid email')) {
+        errorMessage = 'Format email tidak valid. Silakan masukkan email yang benar.';
+      } else if (message.contains('weak password')) {
+        errorMessage = 'Password terlalu lemah. Gunakan kombinasi huruf, angka, dan simbol.';
+      } else if (message.contains('rate limit')) {
+        errorMessage = 'Terlalu banyak percobaan. Silakan coba lagi nanti.';
+      } else {
+        errorMessage = 'Pendaftaran gagal. Silakan coba lagi.';
+      }
+      throw AuthException(errorMessage);
     } catch (e) {
-      // Handle specific Supabase errors
       if (e is AuthException) {
         throw e;
       }
-      if (e.toString().contains('Email rate limit exceeded')) {
-        throw AuthException('Too many attempts. Please try again later.');
-      }
-      throw AuthException(e.toString());
+      throw AuthException('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
     }
   }
 
@@ -63,7 +79,7 @@ class AuthRepository {
     try {
       // Basic email format validation
       if (!SupabaseService.isValidEmail(email)) {
-        throw AuthException('Please enter a valid email format');
+        throw AuthException('Format email tidak valid. Silakan masukkan email yang benar.');
       }
 
       final response = await SupabaseService.auth.signInWithPassword(
@@ -72,7 +88,7 @@ class AuthRepository {
       );
 
       if (response.user == null) {
-        throw AuthException('Invalid email or password');
+        throw AuthException('Email atau password salah. Silakan periksa kembali.');
       }
 
       // Handle Remember Me functionality
@@ -88,14 +104,30 @@ class AuthRepository {
         id: response.user!.id,
         email: response.user!.email ?? email,
       );
+    } on AuthApiException catch (e) {
+      // Handle specific Supabase auth errors
+      String errorMessage;
+      final message = e.message.toLowerCase();
+      
+      if (message.contains('invalid login credentials') || message.contains('invalid email or password')) {
+        errorMessage = 'Email atau password salah. Silakan periksa kembali.';
+      } else if (message.contains('email not confirmed')) {
+        errorMessage = 'Email belum diverifikasi. Silakan cek email Anda.';
+      } else if (message.contains('too many requests') || message.contains('rate limit')) {
+        errorMessage = 'Terlalu banyak percobaan login. Silakan coba lagi nanti.';
+      } else if (message.contains('user not found')) {
+        errorMessage = 'Akun dengan email ini tidak ditemukan.';
+      } else if (message.contains('account is disabled')) {
+        errorMessage = 'Akun Anda telah dinonaktifkan. Hubungi dukungan.';
+      } else {
+        errorMessage = 'Login gagal. Silakan coba lagi.';
+      }
+      throw AuthException(errorMessage);
     } catch (e) {
       if (e is AuthException) {
         throw e;
       }
-      if (e.toString().contains('Invalid login credentials')) {
-        throw AuthException('Invalid email or password');
-      }
-      throw AuthException(e.toString());
+      throw AuthException('Terjadi kesalahan saat login. Silakan coba lagi.');
     }
   }
 

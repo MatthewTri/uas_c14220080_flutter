@@ -53,7 +53,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      // Extract the actual error message
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('AuthException: ')) {
+        errorMessage = errorMessage.substring(15);
+      } else if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      }
+      emit(AuthError(errorMessage));
     }
   }
 
@@ -72,7 +79,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString()));
+      // Extract the actual error message
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('AuthException: ')) {
+        errorMessage = errorMessage.substring(15);
+      } else if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      }
+      emit(AuthError(errorMessage));
     }
   }
 
